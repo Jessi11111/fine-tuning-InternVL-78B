@@ -1,5 +1,5 @@
 # fine-tuning-InternVL-78B
- NVIDIA RTX PRO 6000 Blackwell
+ NVIDIA RTX PRO 6000 Blackwell, 96 GB of VRAM * 2
 
  What we need:
 ┌──────────────────────────────┐
@@ -70,12 +70,22 @@ pip freeze > requirements.txt
 
 
 4. Load InternVL-78B model with device mapping:
-from transformers import AutoModel
 
+from transformers import AutoModel, AutoTokenizer
+model_name = "OpenGVLab/InternVL3-78B-hf"
 model = AutoModel.from_pretrained(
-    "OpenGVLab/InternVL3-78B-hf",
-    device_map="auto",          # auto GPU/CPU assignment
-    offload_folder="./offload", # optional, offload weights to CPU/RAM
-    torch_dtype="auto",         # mixed precision
+    model_name,
+    device_map="auto",             # auto GPU/CPU assignment
+    torch_dtype="bfloat16",        # Blackwell loves BF16
+    load_in_4bit=True,             # QLoRA
+    offload_folder="/mnt/offload", # optional but good for safety
+    max_memory={
+        0: "94GB",                 # leave a little headroom
+        1: "94GB",
+        "cpu": "300GB"
+    }
 )
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
 
